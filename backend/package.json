@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "build": "mkdir -p node_modules/yt-dlp-exec/bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o node_modules/yt-dlp-exec/bin/yt-dlp && chmod a+rx node_modules/yt-dlp-exec/bin/yt-dlp",
+    "build": "mkdir -p node_modules/yt-dlp-exec/bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o node_modules/yt-dlp-exec/bin/yt-dlp && chmod a+rx node_modules/yt-dlp-exec/bin/yt-dlp",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
