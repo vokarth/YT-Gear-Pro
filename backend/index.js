@@ -21,6 +21,7 @@ app.post('/api/info', async (req, res) => {
       noWarnings: true,
       noCallHome: true,
       noCheckCertificates: true,
+      extractorArgs: "youtube:player_client=android"
     });
     
     // Extract available resolutions and calculate sizes
@@ -100,6 +101,7 @@ app.get('/api/download', async (req, res) => {
         url,
         '-f', formatStr,
         '-o', '-', // Output to stdout
+        '--extractor-args', 'youtube:player_client=android'
     ];
 
     if (quality === 'Audio (MP3)') {
