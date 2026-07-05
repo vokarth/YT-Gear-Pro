@@ -343,35 +343,20 @@ function App() {
                   <Download size={20} className="text-primary" />
                   <h3>İndirme Seçenekleri</h3>
                 </div>
-                <div className="format-list">
-                  {videoInfo.qualities.map((qualityObj, index) => {
-                    const quality = qualityObj.label;
-                    const size = qualityObj.size;
-                    const isAudio = quality.includes('Audio');
-                    const isDownloading = downloadingFormat === quality;
-                    
-                    return (
-                      <motion.button 
-                        key={index}
-                        className={`format-list-item ${isAudio ? 'audio-item' : 'video-item'}`}
-                        whileHover={{ scale: 1.02, x: 5 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleDownload(quality)}
-                        disabled={downloadingFormat !== null}
-                      >
-                        <div className="format-icon">
-                          {isAudio ? <Music size={20} /> : <Video size={20} />}
-                        </div>
-                        <div className="format-details">
-                          <span className="format-quality">{quality}</span>
-                          <span className="format-size">{size}</span>
-                        </div>
-                        <div className="format-action">
-                           {isDownloading ? <Loader2 className="spinner" size={20} color="var(--primary)" /> : <Download size={20} />}
-                        </div>
-                      </motion.button>
-                    )
-                  })}
+                <div className="format-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                    İndirmek istediğiniz formatı seçin. (Açılır pencerelere izin verin)
+                  </p>
+                  <iframe 
+                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp4&color=2563EB`} 
+                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
+                    scrolling="no"
+                  ></iframe>
+                  <iframe 
+                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp3&color=10B981`} 
+                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
+                    scrolling="no"
+                  ></iframe>
                 </div>
               </motion.div>
             )}
