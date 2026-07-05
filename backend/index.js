@@ -66,7 +66,8 @@ app.post('/api/info', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching info:', error);
-    res.status(500).json({ error: 'Failed to fetch video info. Make sure the URL is valid.' });
+    // Hatanın tam ne olduğunu görmek için gerçek mesajı gönderiyoruz
+    res.status(500).json({ error: 'DETAYLI HATA: ' + (error.message || 'Bilinmeyen Hata') });
   }
 });
 
