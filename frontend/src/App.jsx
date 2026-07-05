@@ -88,7 +88,11 @@ function App() {
     if(e && e.preventDefault) e.preventDefault();
     if (!url) return;
     
-    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+    let videoId = '';
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+    if (match && match[1]) {
+      videoId = match[1];
+    } else {
       setError('Lütfen geçerli bir YouTube URL\'si girin.');
       return;
     }
@@ -98,11 +102,30 @@ function App() {
     setVideoInfo(null);
 
     try {
-      const response = await axios.post(`${API_URL}/info`, { url });
-      setVideoInfo(response.data);
-      saveToHistory(response.data);
+      // Resmi ve ücretsiz oembed API'si ile video bilgilerini çekiyoruz (Asla engellenmez)
+      const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error('Video bulunamadı.');
+      }
+
+      const info = {
+        video_id: videoId,
+        title: data.title,
+        thumbnail: data.thumbnail_url,
+        channel: data.author_name,
+        duration: 0,
+        qualities: [
+          { label: 'Video (Yüksek Kalite)', size: 'MP4' },
+          { label: 'Audio (Yüksek Kalite)', size: 'MP3' }
+        ]
+      };
+
+      setVideoInfo(info);
+      saveToHistory(info);
     } catch (err) {
-      setError(err.response?.data?.error || 'Video bilgileri alınırken bir hata oluştu.');
+      setError('Video bilgileri alınırken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -111,18 +134,13 @@ function App() {
   const handleDownload = (quality) => {
     setDownloadingFormat(quality);
     
-    const downloadUrl = `${API_URL}/download?url=${encodeURIComponent(url)}&quality=${encodeURIComponent(quality)}`;
-    
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = true; 
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // İşlemi dünyanın en güvenilir, reklamsız indirme servisi olan Cobalt'a yönlendiriyoruz
+    const cobaltUrl = `https://cobalt.tools/?u=${encodeURIComponent(url)}`;
+    window.open(cobaltUrl, '_blank');
 
     setTimeout(() => {
       setDownloadingFormat(null);
-    }, 3000);
+    }, 2000);
   };
 
   return (
