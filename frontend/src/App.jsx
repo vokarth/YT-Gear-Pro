@@ -102,30 +102,30 @@ function App() {
     setVideoInfo(null);
 
     try {
-      // Resmi ve ücretsiz oembed API'si ile video bilgilerini çekiyoruz (Asla engellenmez)
-      const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-      const data = await response.json();
+      const response = await axios.post(`${API_URL}/info`, { url });
+      const data = response.data;
       
       if (data.error) {
-        throw new Error('Video bulunamadı.');
+        throw new Error(data.error);
       }
 
       const info = {
-        video_id: videoId,
+        video_id: data.video_id || videoId,
         title: data.title,
-        thumbnail: data.thumbnail_url,
-        channel: data.author_name,
-        duration: 0,
-        qualities: [
-          { label: 'Video (Yüksek Kalite)', size: 'MP4' },
-          { label: 'Audio (Yüksek Kalite)', size: 'MP3' }
-        ]
+        thumbnail: data.thumbnail,
+        channel: data.channel,
+        duration: data.duration || 0,
+        view_count: data.view_count,
+        like_count: data.like_count,
+        upload_date: data.upload_date,
+        description: data.description,
+        qualities: data.qualities || []
       };
 
       setVideoInfo(info);
       saveToHistory(info);
     } catch (err) {
-      setError('Video bilgileri alınırken bir hata oluştu.');
+      setError(err.response?.data?.error || err.message || 'Video bilgileri alınırken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -134,9 +134,8 @@ function App() {
   const handleDownload = (quality) => {
     setDownloadingFormat(quality);
     
-    // İşlemi dünyanın en güvenilir, reklamsız indirme servisi olan Cobalt'a yönlendiriyoruz
-    const cobaltUrl = `https://cobalt.tools/?u=${encodeURIComponent(url)}`;
-    window.open(cobaltUrl, '_blank');
+    const downloadUrl = `${API_URL}/download?url=${encodeURIComponent(url)}&quality=${encodeURIComponent(quality)}`;
+    window.location.href = downloadUrl;
 
     setTimeout(() => {
       setDownloadingFormat(null);
@@ -345,18 +344,34 @@ function App() {
                 </div>
                 <div className="format-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
-                    İndirmek istediğiniz formatı seçin. (Açılır pencerelere izin verin)
+                    İndirmek istediğiniz formatı seçin.
                   </p>
-                  <iframe 
-                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp4&color=2563EB`} 
-                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
-                    scrolling="no"
-                  ></iframe>
-                  <iframe 
-                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp3&color=10B981`} 
-                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
-                    scrolling="no"
-                  ></iframe>
+                  {videoInfo.qualities && videoInfo.qualities.map((quality, index) => {
+                    const isAudio = quality.label.includes('Audio');
+                    return (
+                      <button
+                        key={index}
+                        className={`format-list-item ${isAudio ? 'audio-item' : 'video-item'}`}
+                        onClick={() => handleDownload(quality.label)}
+                        disabled={downloadingFormat === quality.label}
+                      >
+                        <div className="format-icon">
+                          {isAudio ? <Music size={20} /> : <Video size={20} />}
+                        </div>
+                        <div className="format-details">
+                          <span className="format-quality">{quality.label}</span>
+                          <span className="format-size">{quality.size}</span>
+                        </div>
+                        <div className="format-action">
+                          {downloadingFormat === quality.label ? (
+                            <Loader2 size={20} className="spinner" />
+                          ) : (
+                            <Download size={20} />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
