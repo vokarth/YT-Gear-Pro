@@ -88,11 +88,8 @@ function App() {
     if(e && e.preventDefault) e.preventDefault();
     if (!url) return;
     
-    let videoId = '';
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-    if (match && match[1]) {
-      videoId = match[1];
-    } else {
+    if (!match || !match[1]) {
       setError('Lütfen geçerli bir YouTube URL\'si girin.');
       return;
     }
@@ -102,29 +99,13 @@ function App() {
     setVideoInfo(null);
 
     try {
-      // Resmi ve ücretsiz oembed API'si ile video bilgilerini çekiyoruz (Asla engellenmez)
-      const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error('Video bulunamadı.');
-      }
-
-      const info = {
-        video_id: videoId,
-        title: data.title,
-        thumbnail: data.thumbnail_url,
-        channel: data.author_name,
-        duration: 0,
-        qualities: [
-          { label: 'Video (Yüksek Kalite)', size: 'MP4' },
-          { label: 'Audio (Yüksek Kalite)', size: 'MP3' }
-        ]
-      };
+      const response = await axios.post(`${API_URL}/info`, { url });
+      const info = response.data;
 
       setVideoInfo(info);
       saveToHistory(info);
     } catch (err) {
+      console.error(err);
       setError('Video bilgileri alınırken bir hata oluştu.');
     } finally {
       setLoading(false);
@@ -134,9 +115,8 @@ function App() {
   const handleDownload = (quality) => {
     setDownloadingFormat(quality);
     
-    // İşlemi dünyanın en güvenilir, reklamsız indirme servisi olan Cobalt'a yönlendiriyoruz
-    const cobaltUrl = `https://cobalt.tools/?u=${encodeURIComponent(url)}`;
-    window.open(cobaltUrl, '_blank');
+    const downloadUrl = `${API_URL}/download?url=${encodeURIComponent(url)}&quality=${encodeURIComponent(quality)}`;
+    window.open(downloadUrl, '_blank');
 
     setTimeout(() => {
       setDownloadingFormat(null);
@@ -345,18 +325,25 @@ function App() {
                 </div>
                 <div className="format-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
-                    İndirmek istediğiniz formatı seçin. (Açılır pencerelere izin verin)
+                    İndirmek istediğiniz formatı seçin.
                   </p>
-                  <iframe 
-                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp4&color=2563EB`} 
-                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
-                    scrolling="no"
-                  ></iframe>
-                  <iframe 
-                    src={`https://loader.to/api/button/?url=${encodeURIComponent(url)}&f=mp3&color=10B981`} 
-                    style={{ width: '100%', height: '60px', border: 'none', overflow: 'hidden', borderRadius: '8px' }}
-                    scrolling="no"
-                  ></iframe>
+                  {videoInfo.qualities && videoInfo.qualities.map((q, idx) => (
+                    <button
+                      key={idx}
+                      className="download-btn"
+                      onClick={() => handleDownload(q.label)}
+                      disabled={downloadingFormat === q.label}
+                      style={{ padding: '12px 15px', background: 'var(--primary)', color: '#fff', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '500', fontSize: '1rem', transition: 'background 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'var(--primary-hover)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'var(--primary)'}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {q.label.includes('Audio') ? <Music size={18} /> : <Video size={18} />}
+                        {q.label}
+                      </span>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.9, background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px' }}>{q.size}</span>
+                    </button>
+                  ))}
                 </div>
               </motion.div>
             )}
